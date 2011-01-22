@@ -3,17 +3,17 @@ require 'sha1'
 module DoIf
   YAML_FILE = "/tmp/do_if.yml"
   
-  def self.any_file_changed(dir_name, &block)
+  def self.any_file_changed(file_glob, &block)
     FileUtils.touch(YAML_FILE) unless File.exists?(YAML_FILE)
     
     cache = YAML.load_file(YAML_FILE) || {}
-    files = Dir.glob("#{dir_name}/*")
+    files = Dir.glob(file_glob)
     
     file_hash = file_name_hash(files)
     mtime = max_mtime(files)
     
-    if !cache.has_key?(dir_name) || (cache[dir_name] != {'file_names' => file_hash, 'max_mtime' => mtime})
-      update_cache_and_save cache, dir_name, file_hash, mtime
+    if !cache.has_key?(file_glob) || (cache[file_glob] != {'file_names' => file_hash, 'max_mtime' => mtime})
+      update_cache_and_save cache, file_glob, file_hash, mtime
       yield
     end
   end
