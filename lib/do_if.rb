@@ -4,10 +4,12 @@ module DoIf
   YAML_FILE = "/tmp/do_if.yml"
   
   def self.any_file_changed(file_glob, &block)
-    FileUtils.touch(YAML_FILE) unless File.exists?(YAML_FILE)
-    
-    cache = YAML.load_file(YAML_FILE) || {}
     files = Dir.glob(file_glob)
+    
+    FileUtils.touch(YAML_FILE) unless File.exists?(YAML_FILE)
+    cache = YAML.load_file(YAML_FILE) || {}
+
+    return if files.empty? && !cache.has_key?(file_glob)
     
     file_hash = file_name_hash(files)
     mtime = max_mtime(files)
@@ -15,6 +17,14 @@ module DoIf
     if !cache.has_key?(file_glob) || (cache[file_glob] != {'file_names' => file_hash, 'max_mtime' => mtime})
       update_cache_and_save cache, file_glob, file_hash, mtime
       yield
+    end
+  end
+  
+  def self.any_file_changed_for_each_changed_file(file_glob, &block)
+    Dir.glob(file_glob).each do |file_path|
+      DoIf.any_file_changed(file_path) do
+        yield file_path
+      end
     end
   end
   

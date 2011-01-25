@@ -32,6 +32,10 @@ describe DoIf do
   describe '.any_file_changed' do
     describe 'when the specified directory hasnt been run before' do
       it_should_call_the_block 'one_file/**/*'
+      
+      describe 'when there are no files in the directory' do
+        it_should_not_call_the_block 'empty/**/*'
+      end
     end
     
     describe 'when called multiple times on a single directory' do
@@ -71,6 +75,42 @@ describe DoIf do
         end
         
         it_should_call_the_block 'many_files/**/*'
+        
+        describe 'when the file was the last file in the directory' do 
+          before do
+            DoIf.any_file_changed fixture('one_file/**/*') do end
+            FileUtils.rm(fixture('one_file/1'))
+          end
+          
+          after do
+            FileUtils.touch(fixture('one_file/1'))
+          end
+          
+          it_should_call_the_block 'one_file/**/*'
+        end
+      end
+    end
+  end
+
+  describe '.any_file_changed_for_each_changed_file' do
+    def it_should_call_the_block_for(glob, files)
+      params = []
+      DoIf.any_file_changed_for_each_changed_file(fixture(glob)) do |f|
+        params << f
+      end
+      params.length.should == files.length
+      files.each_with_index do |file_path, i|
+        params[i].should == File.expand_path(fixture(file_path))
+      end
+    end
+    
+    describe 'when the specified directory hasnt been run before' do
+      it 'should call the block once with the file name' do
+        it_should_call_the_block_for('one_file/**/*', ['one_file/1'])
+      end
+      
+      it 'should only the block on each file when multiple files exist' do
+        it_should_call_the_block_for('many_files/**/*', ['many_files/1', 'many_files/2'])
       end
     end
   end
