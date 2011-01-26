@@ -1,6 +1,7 @@
 spec = Gem::Specification.new do |s|
   s.name = "DoIf"
   s.version = "1.0"
+  s.platform = Gem::Platform::RUBY
   s.date = Time.now.strftime('%Y-%m-%d')
   s.authors = ["Ian Fisher", "Gregg Van Hove"]
   s.email = ["loktar@gmail.com", "gregg@slackersoft.net"]
