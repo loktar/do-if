@@ -1,5 +1,5 @@
 spec = Gem::Specification.new do |s|
-  s.name = "DoIf"
+  s.name = "do-if"
   s.version = "1.0"
   s.platform = Gem::Platform::RUBY
   s.date = Time.now.strftime('%Y-%m-%d')
