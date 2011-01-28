@@ -34,18 +34,23 @@ end
 describe DoIf do
   before do
     FileUtils.rm(DoIf::YAML_FILE) if File.exists?(DoIf::YAML_FILE)
-    %w(empty many_files one_file).each do |folder|
+    %w(empty many_files one_file nested_file/sub_dir).each do |folder|
       `rm -f #{fixture(folder)}/*`
     end
     
     FileUtils.touch(fixture('one_file/1'))
     FileUtils.touch(fixture('many_files/1'))
     FileUtils.touch(fixture('many_files/2'))
+    FileUtils.touch(fixture('nested_file/sub_dir/1'))
   end
   
   describe '.any_file_changed' do
     describe 'when the specified directory hasnt been run before' do
       it_should_call_the_block 'one_file/**/*'
+
+      it_should_call_the_block 'many_files/**/*'
+      
+      it_should_call_the_block 'nested_file/**/*'
       
       describe 'when there are no files in the directory' do
         it_should_not_call_the_block 'empty/**/*'
@@ -153,6 +158,25 @@ describe DoIf do
         it 'should call the block for the changed file' do
           touch('one_file/1')
           it_should_call_the_block_for('one_file/**/*', ['one_file/1'])
+        end
+        
+        it 'should not call the block for the unchnaged files' do
+          touch('many_files/1')
+          it_should_call_the_block_for('many_files/**/*', ['many_files/1'])
+        end
+      end
+      
+      describe 'when a file is added' do
+        it 'should call the block for the new file' do
+          touch('many_files/42')
+          it_should_call_the_block_for('many_files/**/*', ['many_files/42'])
+        end
+      end
+      
+      describe 'when a file is deleted' do
+        it 'should not call the block' do
+          FileUtils.rm(fixture('many_files/2'))
+          it_should_not_call_the_block_at_all('many_files/**/*')
         end
       end
     end
