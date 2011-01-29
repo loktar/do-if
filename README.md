@@ -11,7 +11,7 @@ Here's an example where you want to rebuild DOM fixtures when any of your view f
 Here's an example looking for accidental console statements in JavaScript files:
 
     DoIf.any_file_changed_for_each_changed_file("#{Rails.root}/public/javascripts/**/*.js") do |changed_file|
-      if File.read(changed_file).includes? 'console.'
+      if File.read(changed_file).include? 'console.'
         raise "Whoops! A console statement was found in #{changed_file}"
       end
     end
