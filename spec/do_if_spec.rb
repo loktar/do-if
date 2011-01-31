@@ -2,22 +2,22 @@ require File.join(File.dirname(__FILE__), '../lib/do_if')
 
 def it_should_call_the_block(fixture_glob)
   it 'should call the block' do
-    was_called = false
-    DoIf.any_file_changed fixture(fixture_glob) do
-      was_called = true
-    end
-    was_called.should == true
+    called_the_block(fixture_glob).should == true
   end
 end
 
 def it_should_not_call_the_block(fixture_glob)
-  it 'should call the block' do
-    was_called = false
-    DoIf.any_file_changed fixture(fixture_glob) do
-      was_called = true
-    end
-    was_called.should == false
+  it 'should not call the block' do
+    called_the_block(fixture_glob).should == false
   end
+end
+
+def called_the_block(fixture_glob)
+  was_called = false
+  DoIf.any_file_changed fixture(fixture_glob) do
+    was_called = true
+  end
+  was_called
 end
 
 def fixture(path)
@@ -33,9 +33,9 @@ end
 
 describe DoIf do
   before do
-    FileUtils.rm(DoIf::YAML_FILE) if File.exists?(DoIf::YAML_FILE)
+    DoIf.reset
     %w(empty many_files one_file nested_file/sub_dir).each do |folder|
-      `rm -f #{fixture(folder)}/*`
+      %x{rm -f #{fixture(folder)}/*}
     end
     
     FileUtils.touch(fixture('one_file/1'))
@@ -43,7 +43,22 @@ describe DoIf do
     FileUtils.touch(fixture('many_files/2'))
     FileUtils.touch(fixture('nested_file/sub_dir/1'))
   end
-  
+
+  describe '.reset' do
+    it 'should reset the stored state of whether files have changed' do
+      called_the_block('one_file/**/*').should == true
+      called_the_block('one_file/**/*').should == false
+      DoIf.reset
+      called_the_block('one_file/**/*').should == true
+    end
+
+    it "should handle cases when no state is saved" do
+      lambda {
+        DoIf.reset
+      }.should_not raise_error
+    end
+  end
+
   describe '.any_file_changed' do
     describe 'when the specified directory hasnt been run before' do
       it_should_call_the_block 'one_file/**/*'
@@ -178,6 +193,35 @@ describe DoIf do
           FileUtils.rm(fixture('many_files/2'))
           it_should_not_call_the_block_at_all('many_files/**/*')
         end
+      end
+    end
+  end
+
+  describe '.temp_directory' do
+    describe 'with the default temp_directory' do
+      it 'returns the default' do
+        DoIf.temp_directory.should == '/tmp'
+      end
+
+      it 'saves the YAML file in the temp_directory' do
+        DoIf.any_file_changed(fixture("one_file/**/*")) do end
+        File.exists?('/tmp/do_if.yml').should be_true
+      end
+    end
+
+    describe 'with an overridden temp_directory' do
+      before do
+        FileUtils.rm_r('/tmp/do_if') if File.exists?('/tmp/do_if')
+        DoIf.temp_directory = '/tmp/do_if/test'
+        DoIf.any_file_changed(fixture('one_file/**/*')) do end
+      end
+
+      it 'creates any necessary directories' do
+        File.exists?('/tmp/do_if/test').should be_true
+      end
+
+      it 'saves the YAML file in the specified directory' do
+        File.exists?('/tmp/do_if/test/do_if.yml').should be_true
       end
     end
   end

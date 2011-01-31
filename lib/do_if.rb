@@ -1,14 +1,15 @@
 require 'sha1'
 
 module DoIf
-  YAML_FILE = "/tmp/do_if.yml"
+
+  @@temp_directory = '/tmp'
   
   class << self
+
     def any_file_changed(file_glob, &block)
       files = Dir.glob(file_glob)
-    
-      FileUtils.touch(YAML_FILE) unless File.exists?(YAML_FILE)
-      cache = YAML.load_file(YAML_FILE) || {}
+
+      cache = File.exists?(yaml_file) ? YAML.load_file(yaml_file) : {}
 
       return if files.empty? && !cache.has_key?(file_glob)
     
@@ -28,12 +29,29 @@ module DoIf
         end
       end
     end
-  
+
+    def temp_directory
+      @@temp_directory
+    end
+
+    def temp_directory=(value)
+      @@temp_directory = value
+    end
+
+    def reset
+      FileUtils.rm(yaml_file) if File.exists?(yaml_file)
+    end
+
     private
+
+    def yaml_file
+      File.join(@@temp_directory, "do_if.yml")
+    end
   
     def update_cache_and_save(cache, dir_name, file_hash, mtime)
       cache[dir_name] = {"file_names" => file_hash, "max_mtime" => mtime}
-      File.open(YAML_FILE, 'w') do |f|
+      FileUtils.mkdir_p(File.expand_path(temp_directory)) unless File.exists?(File.expand_path(temp_directory))
+      File.open(yaml_file, 'w') do |f|
         f.write(YAML.dump(cache))
       end
     end

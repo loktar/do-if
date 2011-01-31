@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    DoIf (1.0)
+    do-if (1.0)
 
 GEM
   remote: http://rubygems.org/
@@ -21,6 +21,6 @@ PLATFORMS
   ruby
 
 DEPENDENCIES
-  DoIf!
+  do-if!
   rake
   rspec (= 2.2.0)
